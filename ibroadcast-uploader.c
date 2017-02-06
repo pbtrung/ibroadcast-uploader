@@ -190,29 +190,6 @@ int main(int argc, char *argv[]) {
 
     files_to_upload = files.count;
 
-    for(i = 0; i < json_array_size(json_object_get(root, "md5")); i++) {
-        /* In some cases server return JSON object with null values. Maybe it's error or server not yet
-         * calculate MD5? */
-        if(json_is_null(json_array_get(json_object_get(root, "md5"), i)))
-            continue;
-        if((ent_value = (char *)json_string_value(json_array_get(json_object_get(root, "md5"), i))) == NULL) {
-            fprintf(stderr, "Can't get md5 from JSON object!\n");
-            fprintf(stderr, "%s\n", json_dumps(root, JSON_INDENT(4)));
-            continue;
-        }
-
-        for(n = 0; n < files.count; n++) {
-            if(files.list[n] != NULL && strcasecmp(files.list[n]->md5, ent_value) == 0) {
-                fprintf(stdout, "%s skipped, already uploaded.\n", files.list[n]->name);
-                free(files.list[n]->md5);
-                free(files.list[n]->name);
-                files.list[n] = NULL;
-                files_to_upload--;
-                break;
-            }
-        }
-    }
-
     json_decref(root);
 
     threads = (files_to_upload <= 0 ) ? 0 : (files_to_upload / 5) < 1 ? 1 \
@@ -367,7 +344,6 @@ static int nftw_cb(const char *fpath, const struct stat *sb,
             __MALLOC(files.list[files.count], f_info_t*, sizeof(f_info_t));
             __MALLOC(files.list[files.count]->name, char*, sizeof(char) * (strlen(fpath) + 1));
             strcpy(files.list[files.count]->name, fpath);
-            //files.list[files.count]->md5 = get_file_md5_hash(files.list[files.count]->name);
             files.list[files.count]->md5 = NULL;
 
             files.count++;
